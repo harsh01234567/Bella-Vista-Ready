@@ -46,10 +46,11 @@ except ImportError:  # dotenv is a convenience, not a hard requirement
     pass
 
 try:
-    from openai import OpenAI, RateLimitError
+    from openai import OpenAI
 except ImportError:  # openai SDK not installed -> live mode auto-falls back
     OpenAI = None  # type: ignore[assignment]
-    RateLimitError = None  # type: ignore[assignment,misc]
+
+from logger import logger
 
 # --------------------------------------------------------------------------
 # Configuration
@@ -239,13 +240,25 @@ def cleanup_old_rows(conn: sqlite3.Connection) -> None:
         conn.execute(f"DELETE FROM search_sessions WHERE id IN ({placeholders})", old_sessions)
 
     price_cutoff = (datetime.utcnow() - timedelta(days=PRICE_HISTORY_RETENTION_DAYS)).isoformat()
-    conn.execute("DELETE FROM price_history WHERE observed_at < ?", (price_cutoff,))
+    deleted_price_rows = conn.execute(
+        "DELETE FROM price_history WHERE observed_at < ?", (price_cutoff,)
+    ).rowcount
     conn.commit()
+    if old_sessions or deleted_price_rows:
+        logger.info(
+            "Startup cleanup: removed %d old search session(s), %d stale price_history row(s)",
+            len(old_sessions), deleted_price_rows,
+        )
 
 
 @app.on_event("startup")
 def startup() -> None:
+    logger.info(
+        "Bella Vista backend starting up (mode=%s, live_available=%s, model=%s)",
+        BELLA_VISTA_MODE, OPENAI_CLIENT is not None, OPENAI_MODEL,
+    )
     init_db()
+    logger.info("Database ready at %s", DB_PATH)
 
 
 # --------------------------------------------------------------------------
@@ -661,37 +674,24 @@ def _search_cache_set(key: str, parsed: dict[str, Any]) -> None:
 
 def call_openai_live_search(query: str, previous_intent: dict[str, Any] | None) -> dict[str, Any]:
     """Single OpenAI Responses API call: understands intent AND performs web
-    search. Retries once with backoff on a rate-limit error specifically,
-    before letting the caller fall back to demo mode."""
+    search. No retry - any failure (including rate limits) lets the caller
+    fall back to demo mode immediately."""
     prompt = (
         f"Previous shopping intent (JSON, may be empty): {json.dumps(previous_intent or {}, ensure_ascii=False)}\n\n"
         f"New shopper message: {query}\n\n"
         "Search the web now and respond with the JSON object described in your instructions."
     )
 
-    attempts = 0
-    max_attempts = 3
-    backoff_seconds = 1.0
-    last_exc: Exception | None = None
-    while attempts < max_attempts:
-        attempts += 1
-        try:
-            response = OPENAI_CLIENT.responses.create(
-                model=OPENAI_MODEL,
-                instructions=LIVE_SYSTEM_PROMPT,
-                tools=[{"type": "web_search"}],
-                input=prompt,
-            )
-            break
-        except Exception as exc:  # noqa: BLE001 - only retry the specific rate-limit case below
-            is_rate_limit = RateLimitError is not None and isinstance(exc, RateLimitError)
-            last_exc = exc
-            if not is_rate_limit or attempts >= max_attempts:
-                raise
-            time.sleep(backoff_seconds)
-            backoff_seconds *= 2
-    else:  # pragma: no cover - loop always breaks or raises above
-        raise last_exc or RuntimeError("OpenAI call failed with no exception captured")
+    try:
+        response = OPENAI_CLIENT.responses.create(
+            model=OPENAI_MODEL,
+            instructions=LIVE_SYSTEM_PROMPT,
+            tools=[{"type": "web_search"}],
+            input=prompt,
+        )
+    except Exception as exc:  # noqa: BLE001 - any failure must degrade gracefully to the caller
+        logger.warning("OpenAI live search call failed: %s", exc)
+        raise
 
     raw_text = (response.output_text or "").strip()
     raw_text = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text, flags=re.I | re.S)
@@ -712,6 +712,7 @@ def run_live_search(
     updated in place instead of minting a new session - so "similar products"
     and the URL a user bookmarks/shares keep working across a refinement."""
     if not OPENAI_CLIENT:
+        logger.info("Live search requested but no OpenAI client configured; falling back to demo for query=%r", query)
         return fallback_demo_search(
             query, previous_intent,
             error="Live search is temporarily unavailable (no OpenAI API key configured).",
@@ -721,11 +722,14 @@ def run_live_search(
     cache_key = _search_cache_key(query, previous_intent)
     cached = _search_cache_get(cache_key)
     if cached is not None:
+        logger.info("Live search cache hit for query=%r", query)
         parsed = cached
     else:
+        logger.info("Calling OpenAI live search for query=%r", query)
         try:
             parsed = call_openai_live_search(query, previous_intent)
         except Exception as exc:  # noqa: BLE001 - any AI/network failure must degrade gracefully
+            logger.error("Live search failed for query=%r, falling back to demo: %s", query, exc, exc_info=True)
             return fallback_demo_search(
                 query, previous_intent, error=f"Live search is temporarily unavailable: {exc}", search_id=search_id
             )
@@ -750,6 +754,8 @@ def run_live_search(
 
     for p in products:
         p["similar_product_ids"] = [other["id"] for other in products if other["id"] != p["id"]]
+
+    logger.info("Live search succeeded for query=%r: %d product(s), search_id=%s", query, len(products), search_id)
 
     return {
         "success": True,
@@ -953,6 +959,7 @@ def search(payload: SearchRequest) -> dict[str, Any]:
     query = payload.query.strip()
     if not query:
         raise HTTPException(400, "Search query is required")
+    logger.info("POST /api/search query=%r mode=%s", query, BELLA_VISTA_MODE)
     if BELLA_VISTA_MODE == "demo":
         return fallback_demo_search(query, payload.previous_intent, error=None, is_deliberate_demo=True)
     return run_live_search(query, payload.previous_intent)
@@ -963,6 +970,7 @@ def refine(payload: RefineRequest) -> dict[str, Any]:
     query = payload.query.strip()
     if not query:
         raise HTTPException(400, "Search query is required")
+    logger.info("POST /api/search/refine query=%r mode=%s search_id=%s", query, BELLA_VISTA_MODE, payload.search_id)
 
     # Only reuse search_id if that session actually exists; an unknown/stale
     # id (e.g. from an old bookmarked link) silently starts a fresh session
@@ -987,6 +995,7 @@ def product_detail(product_id: str) -> dict[str, Any]:
         row = conn.execute("SELECT * FROM demo_products WHERE id = ?", (product_id.replace("demo-", ""),)).fetchone()
         conn.close()
         if not row:
+            logger.warning("Product not found: %s", product_id)
             raise HTTPException(404, "Product not found")
         item = demo_row_to_product(row)
         item["match_score"] = 90
@@ -998,6 +1007,7 @@ def product_detail(product_id: str) -> dict[str, Any]:
 
     item = live_product_by_key(product_id)
     if not item:
+        logger.warning("Product not found: %s", product_id)
         raise HTTPException(404, "Product not found")
     history = get_live_price_history(product_id)
     item["price_history"] = history
@@ -1021,6 +1031,7 @@ def search_similar(search_id: str, exclude: str | None = None) -> dict[str, Any]
     session = conn.execute("SELECT * FROM search_sessions WHERE id = ?", (search_id,)).fetchone()
     if not session:
         conn.close()
+        logger.warning("Search session not found: %s", search_id)
         raise HTTPException(404, "Search session not found")
     rows = conn.execute(
         "SELECT product_key FROM search_products WHERE search_id = ? ORDER BY rank ASC", (search_id,)

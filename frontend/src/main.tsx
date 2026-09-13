@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Link, NavLink, Route, Routes, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import axios from "axios";
@@ -160,7 +160,13 @@ function Discover() {
     setLoading(false);
   };
 
-  useEffect(() => { if (query) send(query); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const initialQuerySent = useRef(false);
+  useEffect(() => {
+    if (query && !initialQuerySent.current) {
+      initialQuerySent.current = true;
+      send(query);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>
