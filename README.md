@@ -34,6 +34,18 @@ Frontend shows real product cards (image, price, store, match score)
 ## Run locally
 
 ### Backend
+
+macOS/Linux:
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp ../.env.example .env   # then fill in OPENAI_API_KEY
+uvicorn main:app --reload --port 8000
+```
+
+Windows (PowerShell):
 ```powershell
 cd backend
 python -m venv .venv
@@ -44,7 +56,7 @@ uvicorn main:app --reload --port 8000
 ```
 
 ### Frontend
-```powershell
+```bash
 cd frontend
 npm install
 npm run dev
@@ -154,7 +166,7 @@ is never sent to the frontend, embedded in the JS bundle, or logged. The
 
 ## Tests
 
-```powershell
+```bash
 # backend
 cd backend
 pip install -r requirements-dev.txt
