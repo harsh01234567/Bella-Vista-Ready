@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" role="img" aria-labelledby="title desc">
+  <title id="title">Neutral everyday sneaker</title>
+  <desc id="desc">A clean neutral sneaker illustration with a soft grey upper and an off-white sole.</desc>
+  <rect width="900" height="700" rx="36" fill="#eeeae4"/><ellipse cx="470" cy="565" rx="300" ry="34" fill="#4f4a4322"/>
+  <path d="M160 458c92-18 136-92 177-220 14-43 46-63 87-47l105 43c39 16 63 47 86 85l91 91c28 28 73 44 112 59 37 14 35 48-7 61-107 32-361 28-531 13-90-8-134-29-141-55-4-12 4-22 22-30z" fill="#8d9295" stroke="#4e5356" stroke-width="8"/>
+  <path d="M328 257l92-55 108 44-31 104-141 11-58-48z" fill="#cdd1d1" stroke="#62676a" stroke-width="8"/>
+  <path d="M357 272l98 45M346 312l102 43M337 351l96 38" stroke="#faf9f6" stroke-width="9" stroke-linecap="round"/>
+  <path d="M213 475c150 29 351 24 537-12 38-7 76 16 81 36 5 18-13 31-42 38-114 27-402 22-546 8-58-6-77-43-30-70z" fill="#fdfcf8" stroke="#c9c6c0" stroke-width="9"/>
+  <path d="M209 517c147 21 423 20 594-16" fill="none" stroke="#bbb8b1" stroke-width="9"/>
+</svg>

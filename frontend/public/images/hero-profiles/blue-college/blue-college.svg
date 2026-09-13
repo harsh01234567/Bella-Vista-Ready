@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" role="img" aria-labelledby="title desc">
+  <title id="title">Comfortable blue college sneaker</title>
+  <desc id="desc">A lightweight blue everyday sneaker illustration with a cushioned white sole and breathable panels.</desc>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eef7fb"/><stop offset="1" stop-color="#c8dfeb"/></linearGradient><linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#3d9ed0"/><stop offset="1" stop-color="#145184"/></linearGradient></defs>
+  <rect width="900" height="700" rx="36" fill="url(#bg)"/><ellipse cx="470" cy="565" rx="302" ry="34" fill="#16496b25"/>
+  <path d="M160 456c92-17 134-91 175-220 13-42 45-63 86-48l105 43c40 16 64 48 87 85l90 91c29 29 74 43 112 58 39 16 35 48-7 61-107 33-361 27-531 13-91-8-133-29-140-55-4-12 4-22 23-28z" fill="url(#blue)" stroke="#103c5d" stroke-width="8"/>
+  <path d="M330 255l90-54 108 44-31 105-142 11-57-48z" fill="#bde1f0" stroke="#174d70" stroke-width="8"/>
+  <path d="M296 367c64-16 128-16 183-2l26 81-191 33-72-45z" fill="#338dbd" stroke="#174d70" stroke-width="8"/>
+  <path d="M355 271l100 45M345 311l103 43M336 350l96 38" stroke="#f4fbff" stroke-width="9" stroke-linecap="round"/>
+  <path d="M217 473c151 30 353 24 535-12 39-8 77 15 82 35 5 18-13 31-42 38-115 27-401 22-546 8-58-6-77-43-29-69z" fill="#fff" stroke="#c5d5dc" stroke-width="9"/>
+  <path d="M213 516c147 21 423 20 594-16" fill="none" stroke="#a8c7d5" stroke-width="9"/>
+  <path d="M283 399l40-18 33 10-37 28zM518 247l42 16-34 28-43-19z" fill="#75c5df"/>
+</svg>

@@ -1,0 +1,35 @@
+services:
+  # FastAPI backend — talks to OpenAI, returns real search results
+  - type: web
+    name: bella-vista-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: BELLA_VISTA_MODE
+        value: live
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: OPENAI_API_KEY
+        sync: false          # <- paste your real key in the Render dashboard
+      - key: BELLA_VISTA_ALLOWED_ORIGINS
+        sync: false          # <- set to your frontend's live URL after first deploy
+
+  # React/Vite frontend — static site, calls the backend above
+  - type: web
+    name: bella-vista-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false          # <- set to https://bella-vista-backend.onrender.com/api
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

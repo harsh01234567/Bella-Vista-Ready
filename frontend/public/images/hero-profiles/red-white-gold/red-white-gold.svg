@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 700" role="img" aria-labelledby="title desc">
+  <title id="title">Red and white sneaker with gold accents</title>
+  <desc id="desc">A premium side profile illustration of a red and white sneaker with metallic gold detailing.</desc>
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff8f1"/><stop offset="1" stop-color="#ead8c9"/></linearGradient><linearGradient id="red" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#da4b3e"/><stop offset="1" stop-color="#8d1f24"/></linearGradient></defs>
+  <rect width="900" height="700" rx="36" fill="url(#bg)"/><ellipse cx="470" cy="565" rx="300" ry="34" fill="#6b3d3420"/>
+  <path d="M170 470c80-20 130-88 174-224 14-43 47-62 86-45l95 43c35 16 58 41 81 76l88 93c28 30 74 44 115 58 31 11 38 40 3 55-52 23-269 26-457 16-103-6-171-22-185-43-8-12-2-23 0-29z" fill="url(#red)" stroke="#542226" stroke-width="8"/>
+  <path d="M333 252l93-43 91 42-42 99-128 13-54-42z" fill="#fffaf4" stroke="#6c2b2c" stroke-width="8"/>
+  <path d="M302 379c65-13 124-8 176 4l-18 93-150 6-58-39z" fill="#fffaf4" stroke="#6c2b2c" stroke-width="8"/>
+  <path d="M487 251l44 20-49 30-35-18zM531 292l44 21-55 29-33-18zM570 337l38 24-63 25-26-19z" fill="#d6a947" stroke="#9d6a20" stroke-width="5"/>
+  <path d="M206 469c134 34 343 37 546 2 27-5 55 12 61 27 4 11-4 23-25 29-98 28-423 28-560 5-60-10-68-40-22-63z" fill="#fff" stroke="#d7cfc4" stroke-width="8"/>
+  <path d="M221 508c133 25 424 28 563-6" fill="none" stroke="#d6a947" stroke-width="8"/>
+  <path d="M379 281l94 42M366 319l96 39M353 357l91 35" stroke="#b9975b" stroke-width="9" stroke-linecap="round"/>
+</svg>
