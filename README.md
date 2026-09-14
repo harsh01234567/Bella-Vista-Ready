@@ -66,12 +66,13 @@ Open http://localhost:5173. The API is available at http://localhost:8000/docs.
 
 ### Windows: one-click start/stop
 
-Once `backend\.venv` is set up (see above) and `frontend` dependencies are installed
-(`npm install`), you can use the helper scripts at the repo root instead of running
-the backend/frontend commands manually:
+Use the helper scripts at the repo root instead of running the backend/frontend
+commands manually. `start.bat` creates `backend\.venv` and runs `npm install` for
+you the first time (and keeps backend deps up to date on later runs), so just make
+sure `backend\.env` exists (see below) before running it:
 
 ```
-start.bat   REM opens the backend (port 8000) and frontend (port 5173) in separate windows
+start.bat   REM installs deps if needed, then opens the backend (port 8000) and frontend (port 5173) in separate windows
 stop.bat    REM closes both dev servers
 ```
 
