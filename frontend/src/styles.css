@@ -12,7 +12,8 @@
 }
 
 body {
-    margin: 0
+    margin: 0;
+    overflow-x: hidden
 }
 
 a {
@@ -413,6 +414,36 @@ h2 i {
     color: #555
 }
 
+.source-badge {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em
+}
+
+.source-live {
+    background: #eaf3ee;
+    color: #2f6b4f
+}
+
+.source-demo {
+    background: #f4e3c8;
+    color: #7a5a1e
+}
+
+.detail-source-badge {
+    position: static;
+    margin: 8px 0 0;
+}
+
 .product-info {
     padding: 12px 3px
 }
@@ -498,6 +529,7 @@ h2 i {
     margin: 70px auto;
     display: grid;
     grid-template-columns: 1fr 1fr;
+    align-items: start;
     gap: 70px;
     padding: 0 25px
 }

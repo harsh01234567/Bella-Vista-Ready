@@ -471,6 +471,74 @@ CRITICAL DATA-INTEGRITY RULES:
 """
 
 
+_INTENT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "product_type": {"type": "string"},
+        "colors": {"type": "array", "items": {"type": "string"}},
+        "max_price": {"type": ["number", "null"]},
+        "min_price": {"type": ["number", "null"]},
+        "brand": {"type": ["string", "null"]},
+        "style": {"type": "array", "items": {"type": "string"}},
+        "use_case": {"type": "array", "items": {"type": "string"}},
+        "keywords": {"type": "array", "items": {"type": "string"}},
+        "cheaper": {"type": "boolean"},
+    },
+    "required": [
+        "product_type", "colors", "max_price", "min_price", "brand",
+        "style", "use_case", "keywords", "cheaper",
+    ],
+    "additionalProperties": False,
+}
+
+_LIVE_PRODUCT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "name": {"type": "string"},
+        "brand": {"type": ["string", "null"]},
+        "price": {"type": ["number", "null"]},
+        "currency": {"type": "string"},
+        "original_price": {"type": ["number", "null"]},
+        "image_url": {"type": ["string", "null"]},
+        "product_url": {"type": ["string", "null"]},
+        "store": {"type": ["string", "null"]},
+        "rating": {"type": ["number", "null"]},
+        "review_count": {"type": ["integer", "null"]},
+        "description": {"type": ["string", "null"]},
+        "colors": {"type": "array", "items": {"type": "string"}},
+        "category": {"type": "string"},
+        "match_reasons": {"type": "array", "items": {"type": "string"}},
+        "source_url": {"type": ["string", "null"]},
+        "source_title": {"type": ["string", "null"]},
+        "availability": {"type": ["string", "null"]},
+    },
+    "required": [
+        "name", "brand", "price", "currency", "original_price", "image_url",
+        "product_url", "store", "rating", "review_count", "description",
+        "colors", "category", "match_reasons", "source_url", "source_title",
+        "availability",
+    ],
+    "additionalProperties": False,
+}
+
+# Enforced via the Responses API's strict json_schema output mode so a
+# malformed/missing field is rejected by OpenAI itself rather than slipping
+# through as bad JSON we have to regex/guess our way out of. The regex-based
+# extraction in call_openai_live_search stays as a fallback for the (rare)
+# case where a model/account combination rejects structured output alongside
+# the web_search tool.
+LIVE_SEARCH_RESPONSE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "message": {"type": "string"},
+        "intent": _INTENT_SCHEMA,
+        "products": {"type": "array", "items": _LIVE_PRODUCT_SCHEMA},
+    },
+    "required": ["message", "intent", "products"],
+    "additionalProperties": False,
+}
+
+
 def make_product_key(product_url: str | None, name: str | None, store: str | None) -> str:
     base = f"{product_url or ''}|{(name or '').lower()}|{(store or '').lower()}"
     return hashlib.sha1(base.encode("utf-8")).hexdigest()[:20]
@@ -688,10 +756,33 @@ def call_openai_live_search(query: str, previous_intent: dict[str, Any] | None) 
             instructions=LIVE_SYSTEM_PROMPT,
             tools=[{"type": "web_search"}],
             input=prompt,
+            text={
+                "format": {
+                    "type": "json_schema",
+                    "name": "bella_vista_live_search_result",
+                    "schema": LIVE_SEARCH_RESPONSE_SCHEMA,
+                    "strict": True,
+                }
+            },
         )
-    except Exception as exc:  # noqa: BLE001 - any failure must degrade gracefully to the caller
-        logger.warning("OpenAI live search call failed: %s", exc)
-        raise
+    except Exception as exc:  # noqa: BLE001 - only a 400 means the schema/tool combo itself was rejected
+        status_code = getattr(exc, "status_code", None)
+        if status_code != 400:
+            # Quota/rate-limit/auth/server errors would fail identically without
+            # the schema too, so don't waste a second round-trip retrying them.
+            logger.warning("OpenAI live search call failed: %s", exc)
+            raise
+        logger.warning("Structured-output live search call rejected (%s); retrying without strict schema", exc)
+        try:
+            response = OPENAI_CLIENT.responses.create(
+                model=OPENAI_MODEL,
+                instructions=LIVE_SYSTEM_PROMPT,
+                tools=[{"type": "web_search"}],
+                input=prompt,
+            )
+        except Exception as exc2:  # noqa: BLE001 - any failure must degrade gracefully to the caller
+            logger.warning("OpenAI live search call failed: %s", exc2)
+            raise
 
     raw_text = (response.output_text or "").strip()
     raw_text = re.sub(r"^```(?:json)?\s*|\s*```$", "", raw_text, flags=re.I | re.S)

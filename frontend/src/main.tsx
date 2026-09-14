@@ -70,6 +70,9 @@ function ProductCard({ p, featured = false, searchId }: { p: Product; featured?:
       <div className="product-img">
         <ProductImage p={p} />
         {!!p.discount_percent && p.discount_percent > 0 && <b className="discount">-{p.discount_percent}%</b>}
+        <span className={"source-badge " + (p.source === "live" ? "source-live" : "source-demo")}>
+          <Bot size={12} /> {p.source === "live" ? "AI live result" : "Demo catalog"}
+        </span>
         <button className="heart" onClick={(e) => e.preventDefault()} aria-label={`Save ${p.name}`}><Heart size={18} /></button>
       </div>
       <div className="product-info">
@@ -342,6 +345,9 @@ function ProductDetail() {
         <div className="detail-image"><ProductImage p={p} detail /></div>
         <div className="detail-copy">
           <small className="eyebrow">{p.brand ?? "Unknown brand"} {p.store ? `/ ${p.store}` : ""}</small>
+          <span className={"source-badge detail-source-badge " + (p.source === "live" ? "source-live" : "source-demo")}>
+            <Bot size={12} /> {p.source === "live" ? "AI-sourced live result" : "Demo catalog item"}
+          </span>
           <h1>{p.name}</h1>
           <div className="rating">
             {p.rating != null ? <><Star fill="currentColor" /> {p.rating} {p.review_count != null && <span>· {p.review_count} reviews</span>}</> : <span className="muted">Rating not verified</span>}
